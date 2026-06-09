@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth/api-auth'
+import { notifyResultsReady } from '@/lib/services/notificationService'
 
 export const PATCH = withAuth(async (request, { user, supabase, params }) => {
   try {
@@ -69,6 +70,23 @@ export const PATCH = withAuth(async (request, { user, supabase, params }) => {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Send notification
+    const sample = (data as Record<string, unknown>)?.samples as Record<string, unknown>
+    const client = sample?.clients as { id?: string; name?: string; contact_email?: string } | null
+    if (client?.contact_email) {
+      notifyResultsReady({
+        sampleId: sample?.id as string,
+        sampleCode: sample?.code as string,
+        clientEmail: client.contact_email,
+        clientName: client.name || 'Cliente',
+        species: sample?.species as string,
+        diagnosis: (data as Record<string, unknown>).diagnosis as string,
+        pathogen: (data as Record<string, unknown>).pathogen_identified as string,
+        recommendations: (data as Record<string, unknown>).recommendations as string,
+        conclusion: (data as Record<string, unknown>).conclusion as string
+      }).catch(err => console.error('Notification failed:', err))
     }
 
     return NextResponse.json(data)

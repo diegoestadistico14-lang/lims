@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth/api-auth'
+import { notifyResultsReady } from '@/lib/services/notificationService'
 
 export const GET = withAuth(async (request, { user, supabase, params }) => {
   try {
@@ -189,7 +190,7 @@ export const PUT = withAuth(async (request, { user, supabase, params }) => {
           id,
           code,
           species,
-          clients (id, name)
+          clients (id, name, contact_email)
         ),
         performed_by_user:users!performed_by (id, name, email),
         validated_by_user:users!validated_by (id, name, email)
@@ -198,6 +199,25 @@ export const PUT = withAuth(async (request, { user, supabase, params }) => {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Send notification when result is validated
+    if (status === 'validated' && currentResult.status !== 'validated') {
+      const sample = (data as Record<string, unknown>)?.samples as Record<string, unknown>
+      const client = sample?.clients as { id?: string; name?: string; contact_email?: string } | null
+      if (client?.contact_email) {
+        notifyResultsReady({
+          sampleId: sample?.id as string,
+          sampleCode: sample?.code as string,
+          clientEmail: client.contact_email,
+          clientName: client.name || 'Cliente',
+          species: sample?.species as string,
+          diagnosis: (data as Record<string, unknown>).diagnosis as string,
+          pathogen: (data as Record<string, unknown>).pathogen_identified as string,
+          recommendations: (data as Record<string, unknown>).recommendations as string,
+          conclusion: (data as Record<string, unknown>).conclusion as string
+        }).catch(err => console.error('Notification failed:', err))
+      }
     }
 
     return NextResponse.json(data)

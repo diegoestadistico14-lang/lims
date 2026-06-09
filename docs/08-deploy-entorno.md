@@ -13,6 +13,7 @@ Este documento describe como desplegar el LIMS en Railway, las variables de ento
 | `01-arquitectura.md` | Estructura del proyecto, standalone output |
 | `02-autenticacion.md` | Variables de entorno Supabase |
 | `07-reportes-pdf.md` | Variables PDFMonkey, webhook |
+| `09-notificaciones.md` | Variables n8n, modo prueba |
 
 ## Stack de deploy
 
@@ -21,6 +22,7 @@ Este documento describe como desplegar el LIMS en Railway, las variables de ento
 - **Build**: `next build` con `output: 'standalone'`
 - **Base de datos**: Supabase Cloud (no se despliega en Railway)
 - **PDF**: PDFMonkey API (externo)
+- **Notificaciones**: n8n (Docker, webhook + SMTP)
 
 ## Dockerfile
 
@@ -68,6 +70,17 @@ PDFMONKEY_TEMPLATE_BACTERIOLOGY=UUID
 PDFMONKEY_TEMPLATE_EARLY_DETECTION=UUID
 PDFMONKEY_TEMPLATE_DEFAULT=UUID
 ```
+
+### n8n (notificaciones por correo)
+
+```bash
+N8N_NOTIFICATIONS_WEBHOOK_URL=https://n8n.railway.app/webhook/lims-notificaciones  # URL del webhook
+N8N_WEBHOOK_USER=admin                 # Basic Auth user (opcional)
+N8N_WEBHOOK_PASSWORD=xxxxx             # Basic Auth password (opcional)
+N8N_TEST_RECIPIENT=test@midominio.com  # Solo desarrollo: redirige TODOS los correos aqui
+```
+
+n8n se despliega como servicio separado (Docker). Ver `docker-compose.yml` y `docs/09-notificaciones.md`.
 
 ### Branding
 

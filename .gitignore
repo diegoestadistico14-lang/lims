@@ -55,3 +55,8 @@ next-env.d.ts
 
 # csv files
 *.csv
+
+# n8n — ignorar datos locales, versionar workflows y script de prueba
+/n8n/*
+!/n8n/workflows/
+!/n8n/test-notificaciones.js

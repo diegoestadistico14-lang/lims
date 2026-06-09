@@ -1,0 +1,66 @@
+{
+  "name": "LIMS — Notificaciones por Correo",
+  "nodes": [
+    {
+      "id": "webhook-trigger",
+      "name": "Recibir notificacion",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lims-notificaciones",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "lims-notificaciones"
+    },
+    {
+      "id": "set-fields",
+      "name": "Limpiar datos",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [500, 300],
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            { "name": "to", "value": "={{ ($json.body.to_email || '').trim() }}" },
+            { "name": "subject", "value": "={{ $json.body.subject }}" },
+            { "name": "html", "value": "={{ $json.body.html }}" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "send-email",
+      "name": "Enviar por Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [750, 300],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "messageType": "html",
+        "toRecipients": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "html": "={{ $json.html }}"
+      }
+    }
+  ],
+  "connections": {
+    "Recibir notificacion": {
+      "main": [[{ "node": "Limpiar datos", "type": "main", "index": 0 }]]
+    },
+    "Limpiar datos": {
+      "main": [[{ "node": "Enviar por Gmail", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "pinData": {},
+  "versionId": "11.0.0"
+}

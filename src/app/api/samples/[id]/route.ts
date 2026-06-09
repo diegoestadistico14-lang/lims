@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth/api-auth'
+import { notifyStatusChange } from '@/lib/services/notificationService'
 
 export const GET = withAuth(async (request, { user, supabase, params }) => {
   try {
@@ -171,6 +172,20 @@ export const PUT = withAuth(async (request, { user, supabase, params }) => {
           by_user: user.id,
           reason: 'Status updated via API'
         })
+
+      // Send email notification
+      const client = (data as Record<string, unknown>)?.clients as { id?: string; name?: string; contact_email?: string; rut?: string } | null
+      if (client?.contact_email) {
+        notifyStatusChange({
+          sampleId: id,
+          sampleCode: (data as Record<string, unknown>).code as string,
+          newStatus: status,
+          clientEmail: client.contact_email,
+          clientName: client.name || 'Cliente',
+          species: (data as Record<string, unknown>).species as string,
+          variety: (data as Record<string, unknown>).variety as string
+        }).catch(err => console.error('Notification failed:', err))
+      }
     }
 
     return NextResponse.json(data)
@@ -304,7 +319,7 @@ export const PATCH = withAuth(async (request, { user, supabase, params }) => {
       .from('samples')
       .update(updateData)
       .eq('id', id)
-      .select(`*, clients (id, name), projects (id, name), sample_tests (id, test_catalog (id, name, area), methods (id, name))`)
+      .select(`*, clients (id, name, contact_email), projects (id, name), sample_tests (id, test_catalog (id, name, area), methods (id, name))`)
       .single()
 
     if (error) {
@@ -322,6 +337,19 @@ export const PATCH = withAuth(async (request, { user, supabase, params }) => {
           by_user: user.id,
           reason: 'Status updated via PATCH API'
         })
+
+      const client = (data as Record<string, unknown>)?.clients as { id?: string; name?: string; contact_email?: string } | null
+      if (client?.contact_email) {
+        notifyStatusChange({
+          sampleId: id,
+          sampleCode: (data as Record<string, unknown>).code as string,
+          newStatus,
+          clientEmail: client.contact_email,
+          clientName: client.name || 'Cliente',
+          species: (data as Record<string, unknown>).species as string,
+          variety: (data as Record<string, unknown>).variety as string
+        }).catch(err => console.error('Notification failed:', err))
+      }
     }
 
     return NextResponse.json(data)

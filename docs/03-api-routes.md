@@ -15,6 +15,7 @@ Este documento cataloga los endpoints REST del LIMS (implementados y planificado
 | `02-autenticacion.md` | withAuth() en detalle, roles, server client |
 | `06-multi-tenant.md` | Como aplicar filtro company_id en cada endpoint |
 | `07-reportes-pdf.md` | Endpoints de reportes y PDFMonkey |
+| `09-notificaciones.md` | Sistema de notificaciones, templates, puntos de disparo |
 
 ## Patron universal
 
@@ -212,6 +213,8 @@ Los handlers deben devolver errores de DB explicitamente (con `error.message` en
 | GET | `/api/dashboard/stats` | Estadisticas del dashboard (muestras, resultados, reportes) |
 | GET | `/api/dashboard/recent-samples` | Muestras recientes |
 | GET | `/api/estadisticas/charts` | Datos para graficos de estadisticas |
+| GET | `/api/notifications/preferences` | Obtener preferencias de notificacion del usuario |
+| PUT | `/api/notifications/preferences` | Actualizar preferencias de notificacion |
 | GET | `/api/interpretations/rules` | Reglas de interpretacion |
 | POST | `/api/interpretations/rules` | Crear regla |
 | POST | `/api/interpretations/evaluate` | Evaluar reglas |

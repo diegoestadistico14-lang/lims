@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth/api-auth'
 import { getDbAreaFromLabel } from '@/config/analysisTypes'
+import { enqueueNotification } from '@/lib/services/notificationService'
 
 export const GET = withAuth(async (request, { user, supabase }) => {
   try {
@@ -263,6 +264,32 @@ export const POST = withAuth(async (request, { user, supabase }) => {
         by_user: user.id,
         reason: 'Sample created'
       })
+
+    // Send notification to client
+    const clientId = (data as Record<string, unknown>).client_id as string
+    if (clientId) {
+      const { data: clientData } = await supabase
+        .from('clients')
+        .select('contact_email, name')
+        .eq('id', clientId)
+        .single()
+
+      if (clientData?.contact_email) {
+        enqueueNotification({
+          userId: user.id,
+          email: clientData.contact_email,
+          templateCode: 'sample_received',
+          payload: {
+            sample_id: (data as Record<string, unknown>).id,
+            sample_code: (data as Record<string, unknown>).code,
+            client_name: clientData.name,
+            species: (data as Record<string, unknown>).species,
+            variety: (data as Record<string, unknown>).variety,
+            received_date: (data as Record<string, unknown>).received_date
+          }
+        }).catch(err => console.error('Notification failed:', err))
+      }
+    }
 
     return NextResponse.json(data, { status: 201 })
   } catch (error) {
